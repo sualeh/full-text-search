@@ -1,12 +1,5 @@
 package us.fatehi.search;
 
-import static java.util.Objects.requireNonNull;
-
-import dev.langchain4j.data.document.Metadata;
-import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.rag.content.Content;
-import dev.langchain4j.rag.content.ContentMetadata;
-import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,9 +26,15 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
+import static java.util.Objects.requireNonNull;
+import dev.langchain4j.data.document.Metadata;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.rag.content.Content;
+import dev.langchain4j.rag.content.ContentMetadata;
+import dev.langchain4j.rag.content.retriever.ContentRetriever;
 
 /** Full-text content retrieval using Apache Lucene for LangChain4J RAG. */
-public final class LuceneContentRetriever implements ContentRetriever, AutoCloseable {
+public final class LuceneContentRetriever implements ContentRetriever {
 
   /** Builder for `LuceneContentRetriever`. */
   public static class LuceneContentRetrieverBuilder {
@@ -149,13 +148,6 @@ public final class LuceneContentRetriever implements ContentRetriever, AutoClose
     this.onlyMatches = onlyMatches;
     this.topNMatches = Math.max(0, topNMatches);
     this.maxTokens = Math.max(0, maxTokens);
-  }
-
-  @Override
-  public void close() throws Exception {
-    if (directory != null) {
-      directory.close();
-    }
   }
 
   /** {@inheritDoc} */

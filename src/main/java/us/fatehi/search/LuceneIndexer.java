@@ -1,12 +1,5 @@
 package us.fatehi.search;
 
-import static java.util.Objects.requireNonNull;
-
-import com.knuddels.jtokkit.Encodings;
-import com.knuddels.jtokkit.api.Encoding;
-import com.knuddels.jtokkit.api.EncodingRegistry;
-import com.knuddels.jtokkit.api.EncodingType;
-import dev.langchain4j.data.segment.TextSegment;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -25,9 +18,15 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
+import com.knuddels.jtokkit.Encodings;
+import com.knuddels.jtokkit.api.Encoding;
+import com.knuddels.jtokkit.api.EncodingRegistry;
+import com.knuddels.jtokkit.api.EncodingType;
+import static java.util.Objects.requireNonNull;
+import dev.langchain4j.data.segment.TextSegment;
 
 /** Lucene indexer for LangChain4J content (in the form of `TextSegment`). */
-public final class LuceneIndexer implements AutoCloseable {
+public final class LuceneIndexer {
 
   static final String CONTENT = "content";
   static final String TOKEN_COUNT = "token-count";
@@ -75,14 +74,6 @@ public final class LuceneIndexer implements AutoCloseable {
       writer.addDocument(doc);
     } catch (final IOException e) {
       LOGGER.log(Level.INFO, String.format("Could not write content%n%s", content), e);
-    }
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void close() throws Exception {
-    if (directory != null) {
-      directory.close();
     }
   }
 

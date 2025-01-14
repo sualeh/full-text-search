@@ -1,0 +1,12 @@
+*.iml
+*.launch
+.classpath
+.gradle/
+.idea/
+.project
+.settings/
+build/
+out/
+target/
+**/launch.json
+pom.xml.versionsBackup
