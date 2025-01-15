@@ -7,10 +7,10 @@
 
   <groupId>us.fatehi</groupId>
   <artifactId>full-text-search</artifactId>
-  <version>0.0.4</version>
+  <version>0.0.5</version>
   <packaging>jar</packaging>
-  <name>LangChain4J Full-text Content Retriever Using Apache Lucene</name>
-
+  <name>Full-text Content Retriever</name>
+  <name>LangChain4J full-text content retriever using Apache Lucene</name>
   <url>https://github.com/sualeh/full-text-search</url>
   <licenses>
     <license>
