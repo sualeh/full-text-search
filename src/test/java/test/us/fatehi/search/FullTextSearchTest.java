@@ -156,7 +156,7 @@ public class FullTextSearchTest {
   @BeforeEach
   public void setUp() {
     directory = DirectoryFactory.tempDirectory();
-    indexer = new LuceneEmbeddingStore(directory);
+    indexer = LuceneEmbeddingStore.builder().directory(directory).build();
     for (final TextSegment textSegment : hitTextSegments) {
       indexer.add(textSegment);
     }

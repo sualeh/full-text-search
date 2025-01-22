@@ -37,11 +37,54 @@ import dev.langchain4j.store.embedding.EmbeddingStore;
 /** Lucene indexer for LangChain4J content (in the form of `TextSegment`). */
 public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
 
+  /** Builder for `LuceneEmbeddingStore`. */
+  public static class LuceneEmbeddingStoreBuilder {
+
+    private Directory directory;
+
+    private LuceneEmbeddingStoreBuilder() {
+      // Set defaults
+    }
+
+    /**
+     * Build an instance of `LuceneContentRetriever` using internal builder field values.
+     *
+     * @return New instance of `LuceneContentRetriever`
+     */
+    public LuceneEmbeddingStore build() {
+      if (directory == null) {
+        directory = DirectoryFactory.tempDirectory();
+      }
+      return new LuceneEmbeddingStore(directory);
+    }
+
+    /**
+     * Sets the Lucene directory. If null, a temporary file-based directory is used.
+     *
+     * @param directory Lucene directory
+     * @return Builder
+     */
+    public LuceneEmbeddingStoreBuilder directory(final Directory directory) {
+      // Can be null
+      this.directory = directory;
+      return this;
+    }
+  }
+
   static final String ID_FIELD_NAME = "id";
   static final String CONTENT_FIELD_NAME = "content";
   static final String TOKEN_COUNT_FIELD_NAME = "estimated-token-count";
 
   private static final Logger log = LoggerFactory.getLogger(LuceneEmbeddingStore.class);
+
+  /**
+   * Instantiate a builder for `LuceneEmbeddingStore`.
+   *
+   * @return Builder for `LuceneEmbeddingStore`
+   */
+  public static LuceneEmbeddingStoreBuilder builder() {
+    return new LuceneEmbeddingStoreBuilder();
+  }
 
   private final Directory directory;
   private final Encoding encoding;
@@ -51,7 +94,7 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
    *
    * @param directory Lucene directory
    */
-  public LuceneEmbeddingStore(final Directory directory) {
+  private LuceneEmbeddingStore(final Directory directory) {
     this.directory = ensureNotNull(directory, "directory");
     final EncodingRegistry registry = Encodings.newDefaultEncodingRegistry();
     encoding = registry.getEncoding(EncodingType.CL100K_BASE);
