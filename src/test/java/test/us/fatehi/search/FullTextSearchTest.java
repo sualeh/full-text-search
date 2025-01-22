@@ -15,7 +15,7 @@ import dev.langchain4j.rag.content.Content;
 import dev.langchain4j.rag.query.Query;
 import us.fatehi.search.DirectoryFactory;
 import us.fatehi.search.LuceneContentRetriever;
-import us.fatehi.search.LuceneIndexer;
+import us.fatehi.search.LuceneEmbeddingStore;
 
 public class FullTextSearchTest {
 
@@ -37,7 +37,7 @@ public class FullTextSearchTest {
   }
 
   private Directory directory;
-  private LuceneIndexer indexer;
+  private LuceneEmbeddingStore indexer;
   private LuceneContentRetriever contentRetriever;
 
   @Test
@@ -68,7 +68,7 @@ public class FullTextSearchTest {
       expectedTextSegments.add(textSegment.text());
     }
     for (final TextSegment textSegment : missTextSegments) {
-      indexer.addContent(textSegment);
+      indexer.add(textSegment);
       expectedTextSegments.add(textSegment.text());
     }
     Collections.sort(expectedTextSegments);
@@ -92,7 +92,7 @@ public class FullTextSearchTest {
       expectedTextSegments.add(textSegment.text());
     }
     for (final TextSegment textSegment : missTextSegments) {
-      indexer.addContent(textSegment);
+      indexer.add(textSegment);
     }
     Collections.sort(expectedTextSegments);
 
@@ -156,9 +156,9 @@ public class FullTextSearchTest {
   @BeforeEach
   public void setUp() {
     directory = DirectoryFactory.tempDirectory();
-    indexer = new LuceneIndexer(directory);
+    indexer = new LuceneEmbeddingStore(directory);
     for (final TextSegment textSegment : hitTextSegments) {
-      indexer.addContent(textSegment);
+      indexer.add(textSegment);
     }
   }
 

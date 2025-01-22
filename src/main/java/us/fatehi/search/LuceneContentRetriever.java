@@ -52,8 +52,8 @@ public final class LuceneContentRetriever implements ContentRetriever {
       onlyMatches = true;
       topNMatches = 10;
       maxTokenCount = Integer.MAX_VALUE;
-      contentFieldName = LuceneIndexer.CONTENT_FIELD_NAME;
-      tokenCountFieldName = LuceneIndexer.TOKEN_COUNT_FIELD_NAME;
+      contentFieldName = LuceneEmbeddingStore.CONTENT_FIELD_NAME;
+      tokenCountFieldName = LuceneEmbeddingStore.TOKEN_COUNT_FIELD_NAME;
     }
 
     /**
@@ -82,7 +82,7 @@ public final class LuceneContentRetriever implements ContentRetriever {
      */
     public LuceneContentRetrieverBuilder contentFieldName(final String contentFieldName) {
       if (contentFieldName == null || contentFieldName.isBlank()) {
-        this.contentFieldName = LuceneIndexer.CONTENT_FIELD_NAME;
+        this.contentFieldName = LuceneEmbeddingStore.CONTENT_FIELD_NAME;
       } else {
         this.contentFieldName = contentFieldName;
       }
@@ -143,7 +143,7 @@ public final class LuceneContentRetriever implements ContentRetriever {
      */
     public LuceneContentRetrieverBuilder tokenCountFieldName(final String tokenCountFieldName) {
       if (tokenCountFieldName == null || tokenCountFieldName.isBlank()) {
-        this.tokenCountFieldName = LuceneIndexer.TOKEN_COUNT_FIELD_NAME;
+        this.tokenCountFieldName = LuceneEmbeddingStore.TOKEN_COUNT_FIELD_NAME;
       } else {
         this.tokenCountFieldName = tokenCountFieldName;
       }
