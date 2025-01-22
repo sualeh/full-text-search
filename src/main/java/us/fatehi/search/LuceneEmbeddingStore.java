@@ -39,7 +39,7 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
 
   static final String ID_FIELD_NAME = "id";
   static final String CONTENT_FIELD_NAME = "content";
-  static final String TOKEN_COUNT_FIELD_NAME = "token-count";
+  static final String TOKEN_COUNT_FIELD_NAME = "estimated-token-count";
 
   private static final Logger log = LoggerFactory.getLogger(LuceneEmbeddingStore.class);
 
@@ -80,10 +80,13 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
   }
 
   /**
-   * Add content to a Lucene index, including segment including metadata and token count. <br>
+   * Add content to a Lucene index, including segment including metadata and token count. Ids are
+   * generated if they are null. <br>
    * IMPORTANT: Token counts are approximate, and do not include metadata.
    *
-   * @param content Text segment including metadata
+   * @param id Content id, can be null
+   * @param embedding Content embedding, can be null
+   * @param content Content, can be null
    */
   public void add(final String id, final Embedding embedding, final TextSegment content) {
 
@@ -116,6 +119,12 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
     }
   }
 
+  /**
+   * Generate an id, and index the content (with metadata) in Lucene.
+   *
+   * @param textSegment Content to index
+   * @return Generated id
+   */
   public String add(final TextSegment textSegment) {
     final String id = randomUUID();
     add(id, null, textSegment);
@@ -161,6 +170,16 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 
+  /**
+   * Pad a list with null values so it is a certain size. The original list is not modified, and a
+   * new list is returned. This way we can avoid threading issues if the original list was provided
+   * from calling code.
+   *
+   * @param <P> Type of list values
+   * @param provided Provided list
+   * @param maxSize Size to pad the list to
+   * @return New list padded with null values
+   */
   private <P> List<P> ensureSize(final List<P> provided, final int maxSize) {
     final List<P> sizedList;
     if (isNullOrEmpty(provided)) {
@@ -175,29 +194,41 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
     return sizedList;
   }
 
+  /**
+   * Check whether a string is null or blank.
+   *
+   * @param text Text to check
+   * @return True if text is is null or blank
+   */
   private boolean isBlank(final String text) {
     return text == null || text.isBlank();
   }
 
+  /**
+   * Find the maximum size of lists, so they can be made the same size later.
+   *
+   * @param ids List of content ids
+   * @param embeddings List of content embeddings
+   * @param embedded List of content
+   * @return Maximum size of any of the lists
+   */
   private int maxSize(
-      final List<String> idsArg,
-      final List<Embedding> embeddingsArg,
-      final List<TextSegment> embeddedArg) {
+      final List<String> ids, final List<Embedding> embeddings, final List<TextSegment> embedded) {
     int maxLen = 0;
-    if (!isNullOrEmpty(idsArg)) {
-      final int size = idsArg.size();
+    if (!isNullOrEmpty(ids)) {
+      final int size = ids.size();
       if (maxLen < size) {
         maxLen = size;
       }
     }
-    if (!isNullOrEmpty(embeddingsArg)) {
-      final int size = embeddingsArg.size();
+    if (!isNullOrEmpty(embeddings)) {
+      final int size = embeddings.size();
       if (maxLen < size) {
         maxLen = size;
       }
     }
-    if (!isNullOrEmpty(embeddedArg)) {
-      final int size = embeddedArg.size();
+    if (!isNullOrEmpty(embedded)) {
+      final int size = embedded.size();
       if (maxLen < size) {
         maxLen = size;
       }
@@ -205,6 +236,13 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
     return maxLen;
   }
 
+  /**
+   * Convert a LangChain4J metadata entry into a Lucene field, attempting to preserve the value
+   * types.
+   *
+   * @param entry LangChain4J metadata entry
+   * @return Lucene field
+   */
   private Field toField(final Entry<String, Object> entry) {
     final String fieldName = entry.getKey();
     final var fieldValue = entry.getValue();
