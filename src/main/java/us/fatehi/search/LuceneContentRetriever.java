@@ -18,13 +18,12 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.FieldDoc;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Sort;
-import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.store.Directory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,16 +41,18 @@ public final class LuceneContentRetriever implements ContentRetriever {
 
     private Directory directory;
     private boolean onlyMatches;
-    private int topNMatches;
-    private int maxTokenCount;
+    private int maxResults;
+    private int maxTokens;
+    private double minScore;
     private String contentFieldName;
     private String tokenCountFieldName;
 
     private LuceneContentRetrieverBuilder() {
       // Set defaults
       onlyMatches = true;
-      topNMatches = 10;
-      maxTokenCount = Integer.MAX_VALUE;
+      maxResults = 10;
+      maxTokens = Integer.MAX_VALUE;
+      minScore = 0;
       contentFieldName = LuceneEmbeddingStore.CONTENT_FIELD_NAME;
       tokenCountFieldName = LuceneEmbeddingStore.TOKEN_COUNT_FIELD_NAME;
     }
@@ -68,8 +69,9 @@ public final class LuceneContentRetriever implements ContentRetriever {
       return new LuceneContentRetriever(
           directory,
           onlyMatches,
-          topNMatches,
-          maxTokenCount,
+          maxResults,
+          maxTokens,
+          minScore,
           contentFieldName,
           tokenCountFieldName);
     }
@@ -113,14 +115,40 @@ public final class LuceneContentRetriever implements ContentRetriever {
     }
 
     /**
-     * Returns documents until the maximum token limit is reached.
+     * Returns only a certain number of documents.
      *
-     * @param maxTokenCount Maximum number of tokens
+     * @param maxResults Number of documents to return
      * @return Builder
      */
-    public LuceneContentRetrieverBuilder maxTokenCount(final int maxTokenCount) {
-      if (maxTokenCount >= 0) {
-        this.maxTokenCount = maxTokenCount;
+    public LuceneContentRetrieverBuilder maxResults(final int maxResults) {
+      if (maxResults >= 0) {
+        this.maxResults = maxResults;
+      }
+      return this;
+    }
+
+    /**
+     * Returns documents until the maximum token limit is reached.
+     *
+     * @param maxTokens Maximum number of tokens
+     * @return Builder
+     */
+    public LuceneContentRetrieverBuilder maxTokens(final int maxTokens) {
+      if (maxTokens >= 0) {
+        this.maxTokens = maxTokens;
+      }
+      return this;
+    }
+
+    /**
+     * Returns values above a certain score.
+     *
+     * @param minScore Threshold score
+     * @return Builder
+     */
+    public LuceneContentRetrieverBuilder minScore(final double minScore) {
+      if (minScore >= 0) {
+        this.minScore = minScore;
       }
       return this;
     }
@@ -150,19 +178,6 @@ public final class LuceneContentRetriever implements ContentRetriever {
 
       return this;
     }
-
-    /**
-     * Returns only a certain number of documents.
-     *
-     * @param topNMatches Number of documents to return
-     * @return Builder
-     */
-    public LuceneContentRetrieverBuilder topNMatches(final int topNMatches) {
-      if (topNMatches >= 0) {
-        this.topNMatches = topNMatches;
-      }
-      return this;
-    }
   }
 
   private static final Logger log = LoggerFactory.getLogger(LuceneContentRetriever.class);
@@ -178,8 +193,9 @@ public final class LuceneContentRetriever implements ContentRetriever {
 
   private final Directory directory;
   private final boolean onlyMatches;
-  private final int topNMatches;
-  private final int maxTokenCount;
+  private final int maxResults;
+  private final int maxTokens;
+  private final double minScore;
   private final String contentFieldName;
   private final String tokenCountFieldName;
 
@@ -189,22 +205,24 @@ public final class LuceneContentRetriever implements ContentRetriever {
    *
    * @param directory Lucene directory
    * @param onlyMatches Whether to only consider matching documents
-   * @param topNMatches Return only the first n matches
-   * @param maxTokenCount Return until a maximum token count
+   * @param maxResults Return only the first n matches
+   * @param maxTokens Return until a maximum token count
    * @param contentFieldName Name of the Lucene field with the text
    * @param tokenCountFieldName Name of the Lucene field with token counts
    */
   private LuceneContentRetriever(
       final Directory directory,
       final boolean onlyMatches,
-      final int topNMatches,
-      final int maxTokenCount,
+      final int maxResults,
+      final int maxTokens,
+      final double minScore,
       final String contentFieldName,
       final String tokenCountFieldName) {
     this.directory = ensureNotNull(directory, "directory");
     this.onlyMatches = onlyMatches;
-    this.topNMatches = Math.max(0, topNMatches);
-    this.maxTokenCount = Math.max(0, maxTokenCount);
+    this.maxResults = Math.max(0, maxResults);
+    this.maxTokens = Math.max(0, maxTokens);
+    this.minScore = Math.max(0, minScore);
     this.contentFieldName = ensureNotBlank(contentFieldName, "contentFieldName");
     this.tokenCountFieldName = ensureNotBlank(tokenCountFieldName, "tokenCountFieldName");
   }
@@ -223,10 +241,13 @@ public final class LuceneContentRetriever implements ContentRetriever {
       final Query luceneQuery = buildQuery(query.text());
 
       final IndexSearcher searcher = new IndexSearcher(reader);
-      final TopDocs topDocs = searcher.search(luceneQuery, topNMatches, Sort.RELEVANCE);
+      final TopFieldDocs topDocs = searcher.search(luceneQuery, maxResults, Sort.RELEVANCE, true);
       final List<Content> hits = new ArrayList<>();
       final StoredFields storedFields = reader.storedFields();
       for (final ScoreDoc scoreDoc : topDocs.scoreDocs) {
+        if (scoreDoc.score < minScore) {
+          continue;
+        }
         // Retrieve document contents
         final Document document = storedFields.document(scoreDoc.doc);
         final String content = document.get(contentFieldName);
@@ -236,7 +257,7 @@ public final class LuceneContentRetriever implements ContentRetriever {
 
         // Check if number of documents is exceeded
         docCount = docCount + 1;
-        if (docCount > topNMatches) {
+        if (docCount > maxResults) {
           break;
         }
 
@@ -244,7 +265,7 @@ public final class LuceneContentRetriever implements ContentRetriever {
         final IndexableField tokenCountField = document.getField(tokenCountFieldName);
         if (tokenCountField != null) {
           final int docTokens = tokenCountField.numericValue().intValue();
-          if (tokenCount + docTokens > maxTokenCount) {
+          if (tokenCount + docTokens > maxTokens) {
             continue;
             // There may be smaller documents to come after this that we can accommodate
           }
@@ -337,18 +358,14 @@ public final class LuceneContentRetriever implements ContentRetriever {
   }
 
   /**
-   * Obtaining the hit score is poorly defined in Lucene, so protect it with a try block.
+   * Create content metadata with hit score.
    *
    * @param scoreDoc Lucene score doc
    * @return Metadata map with score
    */
   private Map<ContentMetadata, Object> withScore(final ScoreDoc scoreDoc) {
     final Map<ContentMetadata, Object> contentMetadata = new HashMap<>();
-    try {
-      contentMetadata.put(ContentMetadata.SCORE, (float) ((FieldDoc) scoreDoc).fields[0] - 1f);
-    } catch (final Exception e) {
-      // Ignore = No score will be added to content metadata
-    }
+    contentMetadata.put(ContentMetadata.SCORE, scoreDoc.score);
     return contentMetadata;
   }
 }

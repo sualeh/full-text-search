@@ -43,7 +43,7 @@ public class FullTextSearchTest {
   @Test
   public void query1() {
 
-    contentRetriever = LuceneContentRetriever.builder().topNMatches(1).directory(directory).build();
+    contentRetriever = LuceneContentRetriever.builder().maxResults(1).directory(directory).build();
 
     final List<String> expectedTextSegments = new ArrayList<>();
     expectedTextSegments.add(hitTextSegments[2].text());
@@ -108,8 +108,7 @@ public class FullTextSearchTest {
   @Test
   public void queryWithMaxTokens() {
 
-    contentRetriever =
-        LuceneContentRetriever.builder().maxTokenCount(8).directory(directory).build();
+    contentRetriever = LuceneContentRetriever.builder().maxTokens(8).directory(directory).build();
 
     final List<String> expectedTextSegments = new ArrayList<>();
     expectedTextSegments.add(hitTextSegments[0].text());
@@ -124,11 +123,57 @@ public class FullTextSearchTest {
   }
 
   @Test
+  public void queryWithMetadataFields() {
+
+    final Metadata metadata = metadataName("doc1");
+    metadata.put("float", -1F);
+    metadata.put("double", -1D);
+    metadata.put("int", -1);
+    metadata.put("long", -1L);
+    final TextSegment textSegment = TextSegment.from("Eye of the tiger", metadata);
+
+    indexer.add(textSegment);
+
+    contentRetriever = LuceneContentRetriever.builder().directory(directory).onlyMatches().build();
+
+    final List<Content> results = contentRetriever.retrieve(Query.from("Tiger"));
+
+    assertThat(results).hasSize(1);
+    final TextSegment actualTextSegment = results.get(0).textSegment();
+    assertThat(actualTextSegment.text()).isEqualTo(textSegment.text());
+
+    final Metadata actualMetadata = actualTextSegment.metadata();
+    assertThat(actualMetadata.getString("name")).isEqualTo(metadata.getString("name"));
+    assertThat(actualMetadata.getFloat("float")).isEqualTo(-1);
+    assertThat(actualMetadata.getDouble("double")).isEqualTo(-1);
+    assertThat(actualMetadata.getInteger("int")).isEqualTo(-1);
+    assertThat(actualMetadata.getLong("long")).isEqualTo(-1);
+  }
+
+  @Test
+  public void queryWithMinScore() {
+
+    contentRetriever = LuceneContentRetriever.builder().minScore(0.3).directory(directory).build();
+
+    final List<String> expectedTextSegments = new ArrayList<>();
+    expectedTextSegments.add(hitTextSegments[2].text());
+    expectedTextSegments.add(hitTextSegments[0].text());
+
+    final List<Content> results = contentRetriever.retrieve(query);
+    final List<String> actualTextSegments =
+        results.stream().map(content -> content.textSegment().text()).collect(Collectors.toList());
+    Collections.sort(actualTextSegments);
+
+    assertThat(results).hasSize(2);
+    assertThat(actualTextSegments).isEqualTo(expectedTextSegments);
+  }
+
+  @Test
   public void retrieverWithBadTokenCountField() {
 
     contentRetriever =
         LuceneContentRetriever.builder()
-            .maxTokenCount(8)
+            .maxTokens(8)
             .tokenCountFieldName("BAD_TOKEN_COUNT_FIELD_NAME")
             .directory(directory)
             .build();
@@ -137,6 +182,16 @@ public class FullTextSearchTest {
 
     // No limiting by token count, since wrong field is used
     assertThat(results).hasSize(hitTextSegments.length);
+  }
+
+  @Test
+  public void retrieverWithNullQuery() {
+
+    contentRetriever = LuceneContentRetriever.builder().directory(directory).build();
+
+    final List<Content> results = contentRetriever.retrieve(null);
+
+    assertThat(results).isEmpty();
   }
 
   @Test

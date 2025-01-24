@@ -103,6 +103,9 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
   /** {@inheritDoc} */
   @Override
   public String add(final Embedding embedding) {
+    if (embedding == null) {
+      return null;
+    }
     final String id = randomUUID();
     add(id, embedding, null);
     return id;
@@ -119,6 +122,9 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
   /** {@inheritDoc} */
   @Override
   public void add(final String id, final Embedding embedding) {
+    if (embedding == null) {
+      return;
+    }
     add(id, embedding, null);
   }
 
@@ -134,8 +140,13 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
   public void add(final String id, final Embedding embedding, final TextSegment content) {
 
     final IndexWriterConfig config = new IndexWriterConfig(new StandardAnalyzer());
-    try (final IndexWriter writer = new IndexWriter(directory, config); ) {
-      final String text = content.text();
+    try (IndexWriter writer = new IndexWriter(directory, config); ) {
+      String text;
+      if (content == null) {
+        text = "";
+      } else {
+        text = content.text();
+      }
       final int tokens = encoding.countTokens(text);
 
       final Document doc = new Document();
@@ -149,10 +160,12 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
       }
       doc.add(new IntField(TOKEN_COUNT_FIELD_NAME, tokens, Store.YES));
 
-      final Map<String, Object> metadataMap = content.metadata().toMap();
-      if (metadataMap != null) {
-        for (final Entry<String, Object> entry : metadataMap.entrySet()) {
-          doc.add(toField(entry));
+      if (content != null) {
+        final Map<String, Object> metadataMap = content.metadata().toMap();
+        if (metadataMap != null) {
+          for (final Entry<String, Object> entry : metadataMap.entrySet()) {
+            doc.add(toField(entry));
+          }
         }
       }
 
@@ -169,6 +182,9 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
    * @return Generated id
    */
   public String add(final TextSegment textSegment) {
+    if (textSegment == null) {
+      return null;
+    }
     final String id = randomUUID();
     add(id, null, textSegment);
     return id;
@@ -177,7 +193,7 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
   /** {@inheritDoc} */
   @Override
   public List<String> addAll(final List<Embedding> embeddings) {
-    if (embeddings == null) {
+    if (embeddings == null || embeddings.isEmpty()) {
       return Collections.emptyList();
     }
     final List<String> ids = generateIds(embeddings.size());
@@ -210,7 +226,8 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
   /** {@inheritDoc} */
   @Override
   public EmbeddingSearchResult<TextSegment> search(final EmbeddingSearchRequest request) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(
+        "Not supported yet. Will be supported when hybrid full text and vector search is supported.");
   }
 
   /**
@@ -224,7 +241,7 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
    * @return New list padded with null values
    */
   private <P> List<P> ensureSize(final List<P> provided, final int maxSize) {
-    final List<P> sizedList;
+    List<P> sizedList;
     if (isNullOrEmpty(provided)) {
       sizedList = new ArrayList<>(Collections.nCopies(maxSize, null));
     } else {
