@@ -1,6 +1,7 @@
 package test.utility;
 
 import org.junit.platform.commons.util.StringUtils;
+import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModelName;
@@ -21,18 +22,18 @@ public class StringEmbedder {
     final StringEmbedding[] missEmbeddings = {embedder.embed("Aaaaah - some random text here.")};
 
     final StringEmbedding query = embedder.embed("How to program like Google");
-    query.writeToFile("query.txt");
+    query.toFile("query.txt");
 
     for (int i = 0; i < hitEmbeddings.length; i++) {
       final StringEmbedding stringEmbedding = hitEmbeddings[i];
-      stringEmbedding.writeToFile("hitDoc" + (i + 1) + ".txt");
+      stringEmbedding.toFile("hitDoc" + (i + 1) + ".txt");
       final double similarity =
           CosineSimilarity.between(query.embedding(), stringEmbedding.embedding());
       System.out.printf("%.4f %s%n", similarity, stringEmbedding.text());
     }
     for (int i = 0; i < missEmbeddings.length; i++) {
-      final StringEmbedding stringEmbedding = hitEmbeddings[i];
-      stringEmbedding.writeToFile("missDoc" + (i + 1) + ".txt");
+      final StringEmbedding stringEmbedding = missEmbeddings[i];
+      stringEmbedding.toFile("missDoc" + (i + 1) + ".txt");
       final double similarity =
           CosineSimilarity.between(query.embedding(), stringEmbedding.embedding());
       System.out.printf("%.4f %s%n", similarity, stringEmbedding.text());
@@ -60,6 +61,6 @@ public class StringEmbedder {
       throw new IllegalArgumentException("No text provided");
     }
     final var embedding = embeddingModel.embed(text).content();
-    return new StringEmbedding(text, embedding);
+    return new StringEmbedding(TextSegment.from(text), embedding);
   }
 }
