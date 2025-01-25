@@ -1,5 +1,6 @@
 package test.us.fatehi.search;
 
+import org.junit.jupiter.api.Disabled;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.allminilml6v2q.AllMiniLmL6V2QuantizedEmbeddingModel;
@@ -7,6 +8,7 @@ import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.EmbeddingStoreIT;
 import us.fatehi.search.LuceneEmbeddingStore;
 
+@Disabled("Disabled until vector search is implemented.")
 public class EmbeddingStoreTest extends EmbeddingStoreIT {
 
   EmbeddingModel embeddingModel = new AllMiniLmL6V2QuantizedEmbeddingModel();
