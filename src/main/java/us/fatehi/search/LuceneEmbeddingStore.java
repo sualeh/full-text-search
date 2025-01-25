@@ -26,6 +26,7 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.FloatField;
 import org.apache.lucene.document.IntField;
+import org.apache.lucene.document.KnnFloatVectorField;
 import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
@@ -75,6 +76,7 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
   static final String ID_FIELD_NAME = "id";
   static final String CONTENT_FIELD_NAME = "content";
   static final String TOKEN_COUNT_FIELD_NAME = "estimated-token-count";
+  static final String EMBEDDING_FIELD_NAME = "embedding";
 
   private static final Logger log = LoggerFactory.getLogger(LuceneEmbeddingStore.class);
 
@@ -160,6 +162,12 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
         doc.add(new TextField(CONTENT_FIELD_NAME, text, Store.YES));
       }
       doc.add(new IntField(TOKEN_COUNT_FIELD_NAME, tokens, Store.YES));
+      if (embedding != null) {
+        float[] vector = embedding.vector();
+        if (vector != null) {
+          doc.add(new KnnFloatVectorField(EMBEDDING_FIELD_NAME, vector));
+        }
+      }
 
       if (content != null) {
         Map<String, Object> metadataMap = content.metadata().toMap();
