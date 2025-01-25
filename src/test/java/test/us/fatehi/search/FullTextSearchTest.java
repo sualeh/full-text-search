@@ -30,8 +30,8 @@ public class FullTextSearchTest {
   };
   private static final Query query = Query.from("Give me information on the lucine search library");
 
-  private static Metadata metadataName(final String name) {
-    final Metadata metadata = new Metadata();
+  private static Metadata metadataName(String name) {
+    Metadata metadata = new Metadata();
     metadata.put("name", name);
     return metadata;
   }
@@ -45,11 +45,11 @@ public class FullTextSearchTest {
 
     contentRetriever = LuceneContentRetriever.builder().maxResults(1).directory(directory).build();
 
-    final List<String> expectedTextSegments = new ArrayList<>();
+    List<String> expectedTextSegments = new ArrayList<>();
     expectedTextSegments.add(hitTextSegments[2].text());
 
-    final List<Content> results = contentRetriever.retrieve(query);
-    final List<String> actualTextSegments =
+    List<Content> results = contentRetriever.retrieve(query);
+    List<String> actualTextSegments =
         results.stream().map(content -> content.textSegment().text()).collect(Collectors.toList());
     Collections.sort(actualTextSegments);
 
@@ -63,18 +63,18 @@ public class FullTextSearchTest {
     contentRetriever =
         LuceneContentRetriever.builder().matchUntilTopN().directory(directory).build();
 
-    final List<String> expectedTextSegments = new ArrayList<>();
-    for (final TextSegment textSegment : hitTextSegments) {
+    List<String> expectedTextSegments = new ArrayList<>();
+    for (TextSegment textSegment : hitTextSegments) {
       expectedTextSegments.add(textSegment.text());
     }
-    for (final TextSegment textSegment : missTextSegments) {
+    for (TextSegment textSegment : missTextSegments) {
       indexer.add(textSegment);
       expectedTextSegments.add(textSegment.text());
     }
     Collections.sort(expectedTextSegments);
 
-    final List<Content> results = contentRetriever.retrieve(query);
-    final List<String> actualTextSegments =
+    List<Content> results = contentRetriever.retrieve(query);
+    List<String> actualTextSegments =
         results.stream().map(content -> content.textSegment().text()).collect(Collectors.toList());
     Collections.sort(actualTextSegments);
 
@@ -87,17 +87,17 @@ public class FullTextSearchTest {
 
     contentRetriever = LuceneContentRetriever.builder().directory(directory).build();
 
-    final List<String> expectedTextSegments = new ArrayList<>();
-    for (final TextSegment textSegment : hitTextSegments) {
+    List<String> expectedTextSegments = new ArrayList<>();
+    for (TextSegment textSegment : hitTextSegments) {
       expectedTextSegments.add(textSegment.text());
     }
-    for (final TextSegment textSegment : missTextSegments) {
+    for (TextSegment textSegment : missTextSegments) {
       indexer.add(textSegment);
     }
     Collections.sort(expectedTextSegments);
 
-    final List<Content> results = contentRetriever.retrieve(query);
-    final List<String> actualTextSegments =
+    List<Content> results = contentRetriever.retrieve(query);
+    List<String> actualTextSegments =
         results.stream().map(content -> content.textSegment().text()).collect(Collectors.toList());
     Collections.sort(actualTextSegments);
 
@@ -110,11 +110,11 @@ public class FullTextSearchTest {
 
     contentRetriever = LuceneContentRetriever.builder().maxTokens(8).directory(directory).build();
 
-    final List<String> expectedTextSegments = new ArrayList<>();
+    List<String> expectedTextSegments = new ArrayList<>();
     expectedTextSegments.add(hitTextSegments[0].text());
 
-    final List<Content> results = contentRetriever.retrieve(query);
-    final List<String> actualTextSegments =
+    List<Content> results = contentRetriever.retrieve(query);
+    List<String> actualTextSegments =
         results.stream().map(content -> content.textSegment().text()).collect(Collectors.toList());
     Collections.sort(actualTextSegments);
 
@@ -125,24 +125,24 @@ public class FullTextSearchTest {
   @Test
   public void queryWithMetadataFields() {
 
-    final Metadata metadata = metadataName("doc1");
+    Metadata metadata = metadataName("doc1");
     metadata.put("float", -1F);
     metadata.put("double", -1D);
     metadata.put("int", -1);
     metadata.put("long", -1L);
-    final TextSegment textSegment = TextSegment.from("Eye of the tiger", metadata);
+    TextSegment textSegment = TextSegment.from("Eye of the tiger", metadata);
 
     indexer.add(textSegment);
 
     contentRetriever = LuceneContentRetriever.builder().directory(directory).onlyMatches().build();
 
-    final List<Content> results = contentRetriever.retrieve(Query.from("Tiger"));
+    List<Content> results = contentRetriever.retrieve(Query.from("Tiger"));
 
     assertThat(results).hasSize(1);
-    final TextSegment actualTextSegment = results.get(0).textSegment();
+    TextSegment actualTextSegment = results.get(0).textSegment();
     assertThat(actualTextSegment.text()).isEqualTo(textSegment.text());
 
-    final Metadata actualMetadata = actualTextSegment.metadata();
+    Metadata actualMetadata = actualTextSegment.metadata();
     assertThat(actualMetadata.getString("name")).isEqualTo(metadata.getString("name"));
     assertThat(actualMetadata.getFloat("float")).isEqualTo(-1);
     assertThat(actualMetadata.getDouble("double")).isEqualTo(-1);
@@ -155,12 +155,12 @@ public class FullTextSearchTest {
 
     contentRetriever = LuceneContentRetriever.builder().minScore(0.3).directory(directory).build();
 
-    final List<String> expectedTextSegments = new ArrayList<>();
+    List<String> expectedTextSegments = new ArrayList<>();
     expectedTextSegments.add(hitTextSegments[2].text());
     expectedTextSegments.add(hitTextSegments[0].text());
 
-    final List<Content> results = contentRetriever.retrieve(query);
-    final List<String> actualTextSegments =
+    List<Content> results = contentRetriever.retrieve(query);
+    List<String> actualTextSegments =
         results.stream().map(content -> content.textSegment().text()).collect(Collectors.toList());
     Collections.sort(actualTextSegments);
 
@@ -178,7 +178,7 @@ public class FullTextSearchTest {
             .directory(directory)
             .build();
 
-    final List<Content> results = contentRetriever.retrieve(query);
+    List<Content> results = contentRetriever.retrieve(query);
 
     // No limiting by token count, since wrong field is used
     assertThat(results).hasSize(hitTextSegments.length);
@@ -189,7 +189,7 @@ public class FullTextSearchTest {
 
     contentRetriever = LuceneContentRetriever.builder().directory(directory).build();
 
-    final List<Content> results = contentRetriever.retrieve(null);
+    List<Content> results = contentRetriever.retrieve(null);
 
     assertThat(results).isEmpty();
   }
@@ -203,7 +203,7 @@ public class FullTextSearchTest {
             .directory(directory)
             .build();
 
-    final List<Content> results = contentRetriever.retrieve(query);
+    List<Content> results = contentRetriever.retrieve(query);
 
     assertThat(results).isEmpty();
   }
@@ -212,7 +212,7 @@ public class FullTextSearchTest {
   public void setUp() {
     directory = DirectoryFactory.tempDirectory();
     indexer = LuceneEmbeddingStore.builder().directory(directory).build();
-    for (final TextSegment textSegment : hitTextSegments) {
+    for (TextSegment textSegment : hitTextSegments) {
       indexer.add(textSegment);
     }
   }

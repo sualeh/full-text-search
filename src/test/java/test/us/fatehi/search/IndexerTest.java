@@ -22,8 +22,8 @@ public class IndexerTest {
       TextSegment.from("Lucene is a powerful search library.", metadataName("doc1"));
   private static final Query query = Query.from("Give me information on the lucine search library");
 
-  private static Metadata metadataName(final String name) {
-    final Metadata metadata = new Metadata();
+  private static Metadata metadataName(String name) {
+    Metadata metadata = new Metadata();
     metadata.put("name", name);
     return metadata;
   }
@@ -39,7 +39,7 @@ public class IndexerTest {
 
     indexer.addAll(null, null, Collections.singletonList(textSegment));
 
-    final List<Content> results = contentRetriever.retrieve(query);
+    List<Content> results = contentRetriever.retrieve(query);
 
     assertThat(results).hasSize(1);
     assertThat(results.get(0).textSegment().metadata().getString("id")).isNotBlank();
@@ -53,7 +53,7 @@ public class IndexerTest {
 
     indexer.addAll((List<Embedding>) null);
 
-    final List<Content> results = contentRetriever.retrieve(query);
+    List<Content> results = contentRetriever.retrieve(query);
 
     assertThat(results).hasSize(0);
   }
@@ -65,7 +65,7 @@ public class IndexerTest {
 
     indexer.add((Embedding) null);
 
-    final List<Content> results = contentRetriever.retrieve(query);
+    List<Content> results = contentRetriever.retrieve(query);
 
     assertThat(results).isEmpty();
   }
@@ -77,7 +77,7 @@ public class IndexerTest {
 
     indexer.add(null, textSegment);
 
-    final List<Content> results = contentRetriever.retrieve(query);
+    List<Content> results = contentRetriever.retrieve(query);
 
     assertThat(results).hasSize(1);
     assertThat(results.get(0).textSegment().metadata().getString("id")).isNotBlank();
@@ -91,7 +91,7 @@ public class IndexerTest {
 
     indexer.add("id", null);
 
-    final List<Content> results = contentRetriever.retrieve(query);
+    List<Content> results = contentRetriever.retrieve(query);
 
     assertThat(results).hasSize(0);
   }
@@ -103,7 +103,7 @@ public class IndexerTest {
 
     indexer.add("id", null, textSegment);
 
-    final List<Content> results = contentRetriever.retrieve(query);
+    List<Content> results = contentRetriever.retrieve(query);
 
     assertThat(results).hasSize(1);
     assertThat(results.get(0).textSegment().metadata().getString("id")).isEqualTo("id");
