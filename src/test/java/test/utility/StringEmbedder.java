@@ -21,21 +21,25 @@ public class StringEmbedder {
 
     final StringEmbedding[] missEmbeddings = {embedder.embed("Aaaaah - some random text here.")};
 
-    final StringEmbedding query = embedder.embed("How to program like Google");
-    query.toFile("query.txt");
+    final StringEmbedding query2 = embedder.embed("How to program like Google");
+    query2.toFile("query2.txt");
+
+    final StringEmbedding query1 =
+        embedder.embed("Give me information on the lucine search library");
+    query1.toFile("query1.txt");
 
     for (int i = 0; i < hitEmbeddings.length; i++) {
       final StringEmbedding stringEmbedding = hitEmbeddings[i];
       stringEmbedding.toFile("hitDoc" + (i + 1) + ".txt");
       final double similarity =
-          CosineSimilarity.between(query.embedding(), stringEmbedding.embedding());
+          CosineSimilarity.between(query1.embedding(), stringEmbedding.embedding());
       System.out.printf("%.4f %s%n", similarity, stringEmbedding.text());
     }
     for (int i = 0; i < missEmbeddings.length; i++) {
       final StringEmbedding stringEmbedding = missEmbeddings[i];
       stringEmbedding.toFile("missDoc" + (i + 1) + ".txt");
       final double similarity =
-          CosineSimilarity.between(query.embedding(), stringEmbedding.embedding());
+          CosineSimilarity.between(query1.embedding(), stringEmbedding.embedding());
       System.out.printf("%.4f %s%n", similarity, stringEmbedding.text());
     }
   }
