@@ -5,7 +5,6 @@ import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModelName;
-import dev.langchain4j.store.embedding.CosineSimilarity;
 
 public class StringEmbedder {
 
@@ -21,33 +20,30 @@ public class StringEmbedder {
 
     final StringEmbedding[] missEmbeddings = {embedder.embed("Aaaaah - some random text here.")};
 
-    final StringEmbedding query2 = embedder.embed("How to program like Google");
-    query2.toFile("query2.txt");
-
     final StringEmbedding query1 =
         embedder.embed("Give me information on the lucine search library");
     query1.toFile("query1.txt");
 
+    final StringEmbedding query2 = embedder.embed("How to program like Google");
+    query2.toFile("query2.txt");
+
+    final StringEmbedding query3 = embedder.embed("Get rid of mice");
+    query3.toFile("query3.txt");
+
     for (int i = 0; i < hitEmbeddings.length; i++) {
       final StringEmbedding stringEmbedding = hitEmbeddings[i];
       stringEmbedding.toFile("hitDoc" + (i + 1) + ".txt");
-      final double similarity =
-          CosineSimilarity.between(query1.embedding(), stringEmbedding.embedding());
-      System.out.printf("%.4f %s%n", similarity, stringEmbedding.text());
     }
     for (int i = 0; i < missEmbeddings.length; i++) {
       final StringEmbedding stringEmbedding = missEmbeddings[i];
       stringEmbedding.toFile("missDoc" + (i + 1) + ".txt");
-      final double similarity =
-          CosineSimilarity.between(query1.embedding(), stringEmbedding.embedding());
-      System.out.printf("%.4f %s%n", similarity, stringEmbedding.text());
     }
   }
 
   private final EmbeddingModel embeddingModel;
 
   public StringEmbedder() {
-    this(25);
+    this(100);
   }
 
   public StringEmbedder(final int embeddingDimensions) {
@@ -64,6 +60,7 @@ public class StringEmbedder {
     if (StringUtils.isBlank(text)) {
       throw new IllegalArgumentException("No text provided");
     }
+    System.out.println("Embedding: " + text);
     final var embedding = embeddingModel.embed(text).content();
     return new StringEmbedding(TextSegment.from(text), embedding);
   }

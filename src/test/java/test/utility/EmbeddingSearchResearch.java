@@ -1,7 +1,10 @@
-package test.us.fatehi.search;
+package test.utility;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
@@ -10,8 +13,8 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.FloatVectorSimilarityQuery;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.KnnFloatVectorQuery;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TopFieldDocs;
@@ -19,11 +22,11 @@ import org.apache.lucene.store.Directory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import test.utility.StringEmbedding;
+import dev.langchain4j.store.embedding.CosineSimilarity;
 import us.fatehi.search.DirectoryFactory;
 import us.fatehi.search.LuceneEmbeddingStore;
 
-public class EmbeddingSearchTest {
+public class EmbeddingSearchResearch {
 
   private static final StringEmbedding[] hits = {
     StringEmbedding.fromResource("hitDoc1.txt"),
@@ -33,13 +36,41 @@ public class EmbeddingSearchTest {
   private static final StringEmbedding[] misses = {
     StringEmbedding.fromResource("missDoc1.txt"),
   };
+  private static final StringEmbedding[] queries = {
+    StringEmbedding.fromResource("query1.txt"),
+    StringEmbedding.fromResource("query2.txt"),
+    StringEmbedding.fromResource("query3.txt"),
+  };
 
   private Directory directory;
   private LuceneEmbeddingStore indexer;
 
   @Test
+  public void cosine() throws Exception {
+    System.out.println("\n>> Cosine similarities");
+
+    for (final StringEmbedding query : queries) {
+      System.out.printf("%n{\"query\"=\"%s\"}%n", query.text());
+      final SortedMap<Double, String> map = new TreeMap<>((a, b) -> b.compareTo(a));
+      for (final StringEmbedding stringEmbedding : hits) {
+        final double similarity =
+            CosineSimilarity.between(query.embedding(), stringEmbedding.embedding());
+        map.put(similarity, stringEmbedding.text().text());
+      }
+      for (final StringEmbedding stringEmbedding : misses) {
+        final double similarity =
+            CosineSimilarity.between(query.embedding(), stringEmbedding.embedding());
+        map.put(similarity, stringEmbedding.text().text());
+      }
+      for (final Entry<Double, String> entry : map.entrySet()) {
+        System.out.printf("%.4f %s%n", entry.getKey(), entry.getValue());
+      }
+    }
+  }
+
+  @Test
   public void queryEmbedding() throws Exception {
-    System.out.println(">> Embedding vector query");
+    System.out.println("\n>> Embedding vector query");
 
     for (final StringEmbedding stringEmbedding : hits) {
       indexer.add(stringEmbedding.embedding());
@@ -48,20 +79,16 @@ public class EmbeddingSearchTest {
       indexer.add(stringEmbedding.embedding());
     }
 
-    for (StringEmbedding query :
-        new StringEmbedding[] {
-          StringEmbedding.fromResource("query1.txt"), StringEmbedding.fromResource("query2.txt")
-        }) {
-      System.out.printf("{\"query\"=\"%s\"}%n", query.text());
+    for (final StringEmbedding query : queries) {
+      System.out.printf("%n{\"query\"=\"%s\"}%n", query.text());
       final org.apache.lucene.search.Query luceneQuery = buildQuery(query);
-      final List<String> actualTextSegments = retrieve(luceneQuery);
-      // assertThat(actualTextSegments).hasSize(4);
+      retrieve(luceneQuery);
     }
   }
 
   @Test
   public void queryFullText() throws Exception {
-    System.out.println(">> Full text query");
+    System.out.println("\n>> Full text query");
 
     for (final StringEmbedding stringEmbedding : hits) {
       indexer.add(stringEmbedding.text());
@@ -70,13 +97,10 @@ public class EmbeddingSearchTest {
       indexer.add(stringEmbedding.text());
     }
 
-    for (StringEmbedding query :
-        new StringEmbedding[] {
-          StringEmbedding.fromResource("query1.txt"), StringEmbedding.fromResource("query2.txt")
-        }) {
-      System.out.printf("{\"query\"=\"%s\"}%n", query.text());
+    for (final StringEmbedding query : queries) {
+      System.out.printf("%n{\"query\"=\"%s\"}%n", query.text());
       final org.apache.lucene.search.Query luceneQuery = buildQuery(query);
-      final List<String> actualTextSegments = retrieve(luceneQuery);
+      retrieve(luceneQuery);
 
       // assertThat(actualTextSegments).hasSize(4);
     }
@@ -84,7 +108,7 @@ public class EmbeddingSearchTest {
 
   @Test
   public void queryHybrid() throws Exception {
-    System.out.println(">> Hybrid query");
+    System.out.println("\n>> Hybrid query");
 
     for (final StringEmbedding stringEmbedding : hits) {
       indexer.add(stringEmbedding.embedding(), stringEmbedding.text());
@@ -93,15 +117,10 @@ public class EmbeddingSearchTest {
       indexer.add(stringEmbedding.embedding(), stringEmbedding.text());
     }
 
-    for (StringEmbedding query :
-        new StringEmbedding[] {
-          StringEmbedding.fromResource("query1.txt"), StringEmbedding.fromResource("query2.txt")
-        }) {
-      System.out.printf("{\"query\"=\"%s\"}%n", query.text());
+    for (final StringEmbedding query : queries) {
+      System.out.printf("%n{\"query\"=\"%s\"}%n", query.text());
       final org.apache.lucene.search.Query luceneQuery = buildQuery(query);
-      final List<String> actualTextSegments = retrieve(luceneQuery);
-
-      // sassertThat(actualTextSegments).hasSize(4);
+      retrieve(luceneQuery);
     }
   }
 
@@ -122,13 +141,13 @@ public class EmbeddingSearchTest {
     final QueryParser parser = new QueryParser("content", new StandardAnalyzer());
     fullTextQuery = parser.parse(query.text().text());
 
-    final KnnFloatVectorQuery vectorQuery =
-        new KnnFloatVectorQuery("embedding", query.embedding().vector(), 10);
+    final org.apache.lucene.search.Query vectorQuery =
+        new FloatVectorSimilarityQuery("embedding", query.embedding().vector(), 0.5f);
 
     final BooleanQuery combinedQuery =
         new BooleanQuery.Builder()
             .add(vectorQuery, Occur.SHOULD)
-            .add(fullTextQuery, Occur.SHOULD) /* .add(new MatchAllDocsQuery(), Occur.SHOULD) */
+            .add(fullTextQuery, Occur.SHOULD)
             .build();
 
     return combinedQuery;
@@ -147,6 +166,7 @@ public class EmbeddingSearchTest {
         if (content == null || content.isBlank()) {
           continue;
         }
+
         System.out.printf("{\"score\"=\"%f\", \"text\"=\"%s\"}%n", scoreDoc.score, content);
         hits.add(content);
       }
