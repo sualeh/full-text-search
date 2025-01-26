@@ -123,7 +123,7 @@ public class EmbeddingSearchTest {
     fullTextQuery = parser.parse(query.text().text());
 
     final KnnFloatVectorQuery vectorQuery =
-        new KnnFloatVectorQuery("embedding-1", query.embedding().vector(), 10);
+        new KnnFloatVectorQuery("embedding", query.embedding().vector(), 10);
 
     final BooleanQuery combinedQuery =
         new BooleanQuery.Builder()
