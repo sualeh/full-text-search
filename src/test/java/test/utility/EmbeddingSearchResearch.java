@@ -13,8 +13,8 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.FloatVectorSimilarityQuery;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.KnnFloatVectorQuery;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TopFieldDocs;
@@ -142,7 +142,8 @@ public class EmbeddingSearchResearch {
     fullTextQuery = parser.parse(query.text().text());
 
     final org.apache.lucene.search.Query vectorQuery =
-        new FloatVectorSimilarityQuery("embedding", query.embedding().vector(), 0.5f);
+        // new FloatVectorSimilarityQuery("embedding", query.embedding().vector(), 0.5f);
+        new KnnFloatVectorQuery("embedding", query.embedding().vector(), 5);
 
     final BooleanQuery combinedQuery =
         new BooleanQuery.Builder()
