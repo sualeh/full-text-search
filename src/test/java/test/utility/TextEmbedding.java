@@ -8,20 +8,19 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import static java.util.Objects.requireNonNull;
-import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 
-public record StringEmbedding(String id, TextSegment text, Embedding embedding) {
+public record TextEmbedding(String id, TextSegment text, Embedding embedding) {
 
-  public StringEmbedding {
+  public TextEmbedding {
     requireNonNull(text, "No text provided");
     requireNonNull(embedding, "No embedding provided");
   }
 
-  public static StringEmbedding fromResource(final String resourceName) {
+  public static TextEmbedding fromResource(final String resourceName) {
     try {
-      final URL resource = StringEmbedding.class.getResource("/" + resourceName);
+      final URL resource = TextEmbedding.class.getResource("/" + resourceName);
       final Path resourcePath = Paths.get(resource.toURI());
       final List<String> lines = Files.readAllLines(resourcePath);
       if (lines.size() != 2) {
@@ -39,19 +38,11 @@ public record StringEmbedding(String id, TextSegment text, Embedding embedding) 
       } else {
         array = new float[0];
       }
-      final Metadata metadata = metadataName(resourceName);
-      return new StringEmbedding(
-          resourceName, TextSegment.from(text, metadata), Embedding.from(array));
+      return new TextEmbedding(resourceName, TextSegment.from(text), Embedding.from(array));
     } catch (final Exception e) {
-      return new StringEmbedding(
+      return new TextEmbedding(
           resourceName, TextSegment.from(e.getMessage()), Embedding.from(new float[0]));
     }
-  }
-
-  private static Metadata metadataName(final String name) {
-    final Metadata metadata = new Metadata();
-    metadata.put("name", name);
-    return metadata;
   }
 
   public void toFile() throws IOException {

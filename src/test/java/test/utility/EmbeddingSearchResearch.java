@@ -21,43 +21,68 @@ import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.store.Directory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import dev.langchain4j.store.embedding.CosineSimilarity;
 import us.fatehi.search.DirectoryFactory;
 import us.fatehi.search.LuceneEmbeddingStore;
 
+@TestMethodOrder(OrderAnnotation.class)
 public class EmbeddingSearchResearch {
 
-  private static final StringEmbedding[] hits = {
-    StringEmbedding.fromResource("hitDoc1.txt"),
-    StringEmbedding.fromResource("hitDoc2.txt"),
-    StringEmbedding.fromResource("hitDoc3.txt"),
+  private static final TextEmbedding[] hits = {
+    TextEmbedding.fromResource("hitDoc1.txt"),
+    TextEmbedding.fromResource("hitDoc2.txt"),
+    TextEmbedding.fromResource("hitDoc3.txt"),
   };
-  private static final StringEmbedding[] misses = {
-    StringEmbedding.fromResource("missDoc1.txt"),
+  private static final TextEmbedding[] misses = {
+    TextEmbedding.fromResource("missDoc1.txt"),
   };
-  private static final StringEmbedding[] queries = {
-    StringEmbedding.fromResource("query1.txt"),
-    StringEmbedding.fromResource("query2.txt"),
-    StringEmbedding.fromResource("query3.txt"),
+  private static final TextEmbedding[] queries = {
+    TextEmbedding.fromResource("query1.txt"),
+    TextEmbedding.fromResource("query2.txt"),
+    TextEmbedding.fromResource("query3.txt"),
   };
 
   private Directory directory;
   private LuceneEmbeddingStore indexer;
 
   @Test
-  public void cosine() throws Exception {
+  @Order(1)
+  public void _01_fullText() throws Exception {
+    System.out.println("\n>> Full text query");
+
+    for (final TextEmbedding stringEmbedding : hits) {
+      indexer.add(stringEmbedding.id(), stringEmbedding.text());
+    }
+    for (final TextEmbedding stringEmbedding : misses) {
+      indexer.add(stringEmbedding.text());
+    }
+
+    for (final TextEmbedding query : queries) {
+      final org.apache.lucene.search.Query luceneQuery = buildQuery(query);
+      retrieve(luceneQuery);
+
+      // assertThat(actualTextSegments).hasSize(4);
+    }
+  }
+
+  @Test
+  @Order(2)
+  public void _02_cosine() throws Exception {
     System.out.println("\n>> Cosine similarities");
 
-    for (final StringEmbedding query : queries) {
-      System.out.printf("%n{\"query\"=\"%s\"}%n", query.text());
+    for (final TextEmbedding query : queries) {
+      System.out.printf("%n{\"query\"=\"%s\"}%n", query.text().text());
       final SortedMap<Double, String> map = new TreeMap<>((a, b) -> b.compareTo(a));
-      for (final StringEmbedding stringEmbedding : hits) {
+      for (final TextEmbedding stringEmbedding : hits) {
         final double similarity =
             CosineSimilarity.between(query.embedding(), stringEmbedding.embedding());
         map.put(similarity, stringEmbedding.text().text());
       }
-      for (final StringEmbedding stringEmbedding : misses) {
+      for (final TextEmbedding stringEmbedding : misses) {
         final double similarity =
             CosineSimilarity.between(query.embedding(), stringEmbedding.embedding());
         map.put(similarity, stringEmbedding.text().text());
@@ -70,56 +95,36 @@ public class EmbeddingSearchResearch {
   }
 
   @Test
-  public void queryEmbedding() throws Exception {
+  @Order(3)
+  public void _03_embedding() throws Exception {
     System.out.println("\n>> Embedding vector query");
 
-    for (final StringEmbedding stringEmbedding : hits) {
+    for (final TextEmbedding stringEmbedding : hits) {
       indexer.add(stringEmbedding.id(), stringEmbedding.embedding());
     }
-    for (final StringEmbedding stringEmbedding : misses) {
+    for (final TextEmbedding stringEmbedding : misses) {
       indexer.add(stringEmbedding.id(), stringEmbedding.embedding());
     }
 
-    for (final StringEmbedding query : queries) {
-      System.out.printf("%n{\"query\"=\"%s\"}%n", query.text());
+    for (final TextEmbedding query : queries) {
       final org.apache.lucene.search.Query luceneQuery = buildQuery(query);
       retrieve(luceneQuery);
     }
   }
 
   @Test
-  public void queryFullText() throws Exception {
-    System.out.println("\n>> Full text query");
-
-    for (final StringEmbedding stringEmbedding : hits) {
-      indexer.add(stringEmbedding.id(), stringEmbedding.text());
-    }
-    for (final StringEmbedding stringEmbedding : misses) {
-      indexer.add(stringEmbedding.text());
-    }
-
-    for (final StringEmbedding query : queries) {
-      System.out.printf("%n{\"query\"=\"%s\"}%n", query.text());
-      final org.apache.lucene.search.Query luceneQuery = buildQuery(query);
-      retrieve(luceneQuery);
-
-      // assertThat(actualTextSegments).hasSize(4);
-    }
-  }
-
-  @Test
-  public void queryHybrid() throws Exception {
+  @Order(4)
+  public void _04_hybrid() throws Exception {
     System.out.println("\n>> Hybrid query");
 
-    for (final StringEmbedding stringEmbedding : hits) {
+    for (final TextEmbedding stringEmbedding : hits) {
       indexer.add(stringEmbedding.id(), stringEmbedding.embedding(), stringEmbedding.text());
     }
-    for (final StringEmbedding stringEmbedding : misses) {
+    for (final TextEmbedding stringEmbedding : misses) {
       indexer.add(stringEmbedding.id(), stringEmbedding.embedding(), stringEmbedding.text());
     }
 
-    for (final StringEmbedding query : queries) {
-      System.out.printf("%n{\"query\"=\"%s\"}%n", query.text());
+    for (final TextEmbedding query : queries) {
       final org.apache.lucene.search.Query luceneQuery = buildQuery(query);
       retrieve(luceneQuery);
     }
@@ -136,8 +141,9 @@ public class EmbeddingSearchResearch {
     directory.close();
   }
 
-  private org.apache.lucene.search.Query buildQuery(final StringEmbedding query)
+  private org.apache.lucene.search.Query buildQuery(final TextEmbedding query)
       throws ParseException {
+    System.out.printf("%n{\"query\"=\"%s\"}%n", query.text().text());
     org.apache.lucene.search.Query fullTextQuery;
     final QueryParser parser = new QueryParser("content", new StandardAnalyzer());
     fullTextQuery = parser.parse(query.text().text());
@@ -168,7 +174,7 @@ public class EmbeddingSearchResearch {
         // Retrieve document contents
         final Document document = storedFields.document(scoreDoc.doc);
         final String id = document.get("id");
-        final String content = StringEmbedding.fromResource(id).text().text();
+        final String content = TextEmbedding.fromResource(id).text().text();
         System.out.printf("{\"score\"=\"%f\", \"text\"=\"%s\"}%n", scoreDoc.score, content);
         hits.add(content);
       }
