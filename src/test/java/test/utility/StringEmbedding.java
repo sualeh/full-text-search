@@ -12,7 +12,7 @@ import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 
-public record StringEmbedding(TextSegment text, Embedding embedding) {
+public record StringEmbedding(String id, TextSegment text, Embedding embedding) {
 
   public StringEmbedding {
     requireNonNull(text, "No text provided");
@@ -40,9 +40,11 @@ public record StringEmbedding(TextSegment text, Embedding embedding) {
         array = new float[0];
       }
       final Metadata metadata = metadataName(resourceName);
-      return new StringEmbedding(TextSegment.from(text, metadata), Embedding.from(array));
+      return new StringEmbedding(
+          resourceName, TextSegment.from(text, metadata), Embedding.from(array));
     } catch (final Exception e) {
-      return new StringEmbedding(TextSegment.from(e.getMessage()), Embedding.from(new float[0]));
+      return new StringEmbedding(
+          resourceName, TextSegment.from(e.getMessage()), Embedding.from(new float[0]));
     }
   }
 
@@ -52,8 +54,8 @@ public record StringEmbedding(TextSegment text, Embedding embedding) {
     return metadata;
   }
 
-  public void toFile(final String filename) throws IOException {
-    try (final PrintWriter writer = new PrintWriter(filename)) {
+  public void toFile() throws IOException {
+    try (final PrintWriter writer = new PrintWriter(id())) {
       writer.println(text().text());
       final var vector = embedding.vector();
       for (int i = 0; i < vector.length; i++) {

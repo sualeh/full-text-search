@@ -3,16 +3,6 @@ package us.fatehi.search;
 import static dev.langchain4j.internal.Utils.isNullOrEmpty;
 import static dev.langchain4j.internal.Utils.randomUUID;
 import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
-
-import com.knuddels.jtokkit.Encodings;
-import com.knuddels.jtokkit.api.Encoding;
-import com.knuddels.jtokkit.api.EncodingRegistry;
-import com.knuddels.jtokkit.api.EncodingType;
-import dev.langchain4j.data.embedding.Embedding;
-import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
-import dev.langchain4j.store.embedding.EmbeddingSearchResult;
-import dev.langchain4j.store.embedding.EmbeddingStore;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +25,15 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.knuddels.jtokkit.Encodings;
+import com.knuddels.jtokkit.api.Encoding;
+import com.knuddels.jtokkit.api.EncodingRegistry;
+import com.knuddels.jtokkit.api.EncodingType;
+import dev.langchain4j.data.embedding.Embedding;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
+import dev.langchain4j.store.embedding.EmbeddingSearchResult;
+import dev.langchain4j.store.embedding.EmbeddingStore;
 
 /** Lucene indexer for LangChain4J content (in the form of `TextSegment`). */
 public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
@@ -182,6 +181,19 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
     } catch (IOException e) {
       log.error(String.format("Could not write content%n%s", content), e);
     }
+  }
+
+  /**
+   * Generate an id, and index the content (with metadata) in Lucene.
+   *
+   * @param textSegment Content to index
+   * @return Generated id
+   */
+  public void add(String id, TextSegment textSegment) {
+    if (textSegment == null) {
+      return;
+    }
+    add(id, null, textSegment);
   }
 
   /**

@@ -13,30 +13,31 @@ public class StringEmbedder {
     final StringEmbedder embedder = new StringEmbedder();
 
     final StringEmbedding[] hitEmbeddings = {
-      embedder.embed("Lucene is a powerful search library."),
-      embedder.embed("Is Lucinity is not a library?"),
-      embedder.embed("BM25Similarity is the default search term similarity algorithm.")
+      embedder.embed("hitDoc1.txt", "Lucene is a powerful search library."),
+      embedder.embed("hitDoc2.txt", "Is Lucinity is not a library?"),
+      embedder.embed(
+          "hitDoc3.txt", "BM25Similarity is the default search term similarity algorithm.")
     };
 
-    final StringEmbedding[] missEmbeddings = {embedder.embed("Aaaaah - some random text here.")};
+    final StringEmbedding[] missEmbeddings = {
+      embedder.embed("missDoc1.txt", "Aaaaah - some random text here.")
+    };
 
     final StringEmbedding query1 =
-        embedder.embed("Give me information on the lucine search library");
-    query1.toFile("query1.txt");
+        embedder.embed("query1.txt", "Give me information on the lucine search library");
+    query1.toFile();
 
-    final StringEmbedding query2 = embedder.embed("How to program like Google");
-    query2.toFile("query2.txt");
+    final StringEmbedding query2 = embedder.embed("query2.txt", "How to program like Google");
+    query2.toFile();
 
-    final StringEmbedding query3 = embedder.embed("Get rid of mice");
-    query3.toFile("query3.txt");
+    final StringEmbedding query3 = embedder.embed("query3.txt", "Get rid of mice");
+    query3.toFile();
 
-    for (int i = 0; i < hitEmbeddings.length; i++) {
-      final StringEmbedding stringEmbedding = hitEmbeddings[i];
-      stringEmbedding.toFile("hitDoc" + (i + 1) + ".txt");
+    for (final StringEmbedding stringEmbedding : hitEmbeddings) {
+      stringEmbedding.toFile();
     }
-    for (int i = 0; i < missEmbeddings.length; i++) {
-      final StringEmbedding stringEmbedding = missEmbeddings[i];
-      stringEmbedding.toFile("missDoc" + (i + 1) + ".txt");
+    for (final StringEmbedding stringEmbedding : missEmbeddings) {
+      stringEmbedding.toFile();
     }
   }
 
@@ -56,12 +57,12 @@ public class StringEmbedder {
             .build();
   }
 
-  public StringEmbedding embed(final String text) {
+  public StringEmbedding embed(final String id, final String text) {
     if (StringUtils.isBlank(text)) {
       throw new IllegalArgumentException("No text provided");
     }
     System.out.println("Embedding: " + text);
     final var embedding = embeddingModel.embed(text).content();
-    return new StringEmbedding(TextSegment.from(text), embedding);
+    return new StringEmbedding(id, TextSegment.from(text), embedding);
   }
 }

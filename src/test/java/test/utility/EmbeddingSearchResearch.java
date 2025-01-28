@@ -74,10 +74,10 @@ public class EmbeddingSearchResearch {
     System.out.println("\n>> Embedding vector query");
 
     for (final StringEmbedding stringEmbedding : hits) {
-      indexer.add(stringEmbedding.embedding());
+      indexer.add(stringEmbedding.id(), stringEmbedding.embedding());
     }
     for (final StringEmbedding stringEmbedding : misses) {
-      indexer.add(stringEmbedding.embedding());
+      indexer.add(stringEmbedding.id(), stringEmbedding.embedding());
     }
 
     for (final StringEmbedding query : queries) {
@@ -92,7 +92,7 @@ public class EmbeddingSearchResearch {
     System.out.println("\n>> Full text query");
 
     for (final StringEmbedding stringEmbedding : hits) {
-      indexer.add(stringEmbedding.text());
+      indexer.add(stringEmbedding.id(), stringEmbedding.text());
     }
     for (final StringEmbedding stringEmbedding : misses) {
       indexer.add(stringEmbedding.text());
@@ -112,10 +112,10 @@ public class EmbeddingSearchResearch {
     System.out.println("\n>> Hybrid query");
 
     for (final StringEmbedding stringEmbedding : hits) {
-      indexer.add(stringEmbedding.embedding(), stringEmbedding.text());
+      indexer.add(stringEmbedding.id(), stringEmbedding.embedding(), stringEmbedding.text());
     }
     for (final StringEmbedding stringEmbedding : misses) {
-      indexer.add(stringEmbedding.embedding(), stringEmbedding.text());
+      indexer.add(stringEmbedding.id(), stringEmbedding.embedding(), stringEmbedding.text());
     }
 
     for (final StringEmbedding query : queries) {
@@ -162,13 +162,13 @@ public class EmbeddingSearchResearch {
       final List<String> hits = new ArrayList<>();
       final StoredFields storedFields = reader.storedFields();
       for (final ScoreDoc scoreDoc : topDocs.scoreDocs) {
-        // Retrieve document contents
-        final Document document = storedFields.document(scoreDoc.doc);
-        final String content = document.get("content");
-        if (content == null || content.isBlank()) {
+        if (scoreDoc.score < 0.4) {
           continue;
         }
-
+        // Retrieve document contents
+        final Document document = storedFields.document(scoreDoc.doc);
+        final String id = document.get("id");
+        final String content = StringEmbedding.fromResource(id).text().text();
         System.out.printf("{\"score\"=\"%f\", \"text\"=\"%s\"}%n", scoreDoc.score, content);
         hits.add(content);
       }
