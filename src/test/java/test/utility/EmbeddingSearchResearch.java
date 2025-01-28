@@ -63,7 +63,8 @@ public class EmbeddingSearchResearch {
         map.put(similarity, stringEmbedding.text().text());
       }
       for (final Entry<Double, String> entry : map.entrySet()) {
-        System.out.printf("%.4f %s%n", entry.getKey(), entry.getValue());
+        System.out.printf(
+            "{\"score\"=\"%f\", \"text\"=\"%s\"}%n", entry.getKey(), entry.getValue());
       }
     }
   }
