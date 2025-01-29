@@ -64,8 +64,6 @@ public class EmbeddingSearchResearch {
     for (final TextEmbedding query : queries) {
       final org.apache.lucene.search.Query luceneQuery = buildQuery(query);
       retrieve(luceneQuery);
-
-      // assertThat(actualTextSegments).hasSize(4);
     }
   }
 

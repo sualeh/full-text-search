@@ -2,12 +2,6 @@ package us.fatehi.search;
 
 import static dev.langchain4j.internal.ValidationUtils.ensureNotBlank;
 import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
-
-import dev.langchain4j.data.document.Metadata;
-import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.rag.content.Content;
-import dev.langchain4j.rag.content.ContentMetadata;
-import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,13 +20,17 @@ import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
-import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.store.Directory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import dev.langchain4j.data.document.Metadata;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.rag.content.Content;
+import dev.langchain4j.rag.content.ContentMetadata;
+import dev.langchain4j.rag.content.retriever.ContentRetriever;
 
 /** Full-text content retrieval using Apache Lucene for LangChain4J RAG. */
 public final class LuceneContentRetriever implements ContentRetriever {
@@ -239,7 +237,7 @@ public final class LuceneContentRetriever implements ContentRetriever {
     int tokenCount = 0;
     try (DirectoryReader reader = DirectoryReader.open(directory)) {
 
-      Query luceneQuery = buildQuery(query.text());
+      org.apache.lucene.search.Query luceneQuery = buildQuery(query.text());
 
       IndexSearcher searcher = new IndexSearcher(reader);
       TopFieldDocs topDocs = searcher.search(luceneQuery, maxResults, Sort.RELEVANCE, true);
@@ -297,8 +295,8 @@ public final class LuceneContentRetriever implements ContentRetriever {
    * @return Lucene query
    * @throws ParseException When the query cannot be parsed into terms
    */
-  private Query buildQuery(String query) {
-    Query fullTextQuery;
+  private org.apache.lucene.search.Query buildQuery(String query) {
+    org.apache.lucene.search.Query fullTextQuery;
     try {
       QueryParser parser = new QueryParser(contentFieldName, new StandardAnalyzer());
       fullTextQuery = parser.parse(query);
@@ -311,7 +309,7 @@ public final class LuceneContentRetriever implements ContentRetriever {
       return fullTextQuery;
     }
 
-    BooleanQuery combinedQuery =
+    org.apache.lucene.search.Query combinedQuery =
         new BooleanQuery.Builder()
             .add(fullTextQuery, Occur.SHOULD)
             .add(new MatchAllDocsQuery(), Occur.SHOULD)
