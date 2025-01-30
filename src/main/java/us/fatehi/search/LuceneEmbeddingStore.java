@@ -132,7 +132,7 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
     }
 
     /**
-     * Add content to a Lucene index, including segment including metadata and token count. Ids are
+     * Add content to a Lucene index, including segment, metadata and token count. Ids are
      * generated if they are null. <br>
      * IMPORTANT: Token counts are approximate, and do not include metadata.
      *
@@ -141,60 +141,7 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
      * @param content Content, can be null
      */
     public void add(String id, Embedding embedding, TextSegment content) {
-
-        IndexWriterConfig config = new IndexWriterConfig(new StandardAnalyzer());
-        try (IndexWriter writer = new IndexWriter(directory, config); ) {
-            String text;
-            if (content == null) {
-                text = "";
-            } else {
-                text = content.text();
-            }
-            int tokens = encoding.countTokens(text);
-
-            Document doc = new Document();
-            if (isBlank(id)) {
-                doc.add(new TextField(ID_FIELD_NAME, randomUUID(), Store.YES));
-            } else {
-                doc.add(new TextField(ID_FIELD_NAME, id, Store.YES));
-            }
-            if (!isBlank(text)) {
-                doc.add(new TextField(CONTENT_FIELD_NAME, text, Store.YES));
-            }
-            doc.add(new IntField(TOKEN_COUNT_FIELD_NAME, tokens, Store.YES));
-            if (embedding != null) {
-                float[] vector = embedding.vector();
-                if (vector != null) {
-                    doc.add(new KnnFloatVectorField(EMBEDDING_FIELD_NAME, vector));
-                }
-            }
-
-            if (content != null) {
-                Map<String, Object> metadataMap = content.metadata().toMap();
-                if (metadataMap != null) {
-                    for (Entry<String, Object> entry : metadataMap.entrySet()) {
-                        doc.add(toField(entry));
-                    }
-                }
-            }
-
-            writer.addDocument(doc);
-        } catch (IOException e) {
-            log.error(String.format("Could not write content%n%s", content), e);
-        }
-    }
-
-    /**
-     * Generate an id, and index the content (with metadata) in Lucene.
-     *
-     * @param textSegment Content to index
-     * @return Generated id
-     */
-    public void add(String id, TextSegment textSegment) {
-        if (textSegment == null) {
-            return;
-        }
-        add(id, null, textSegment);
+        addAll(Collections.singletonList(id), Collections.singletonList(embedding), Collections.singletonList(content));
     }
 
     /**
@@ -233,12 +180,21 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
         List<Embedding> embeddings = ensureSize(embeddingsArg, maxSize);
         List<TextSegment> embedded = ensureSize(embeddedArg, maxSize);
 
+        List<Document> documents = new ArrayList<>();
         for (int i = 0; i < maxSize; i++) {
+            // Create Lucene documents list allowing other documents to be created even if any fail
             try {
-                add(ids.get(i), embeddings.get(i), embedded.get(i));
+                documents.add(toDocument(ids.get(i), embeddings.get(i), embedded.get(i)));
             } catch (Exception e) {
-                log.error("Unable to add embeddings in Lucene", e);
+                log.error("Could not create Lucene document", e);
             }
+        }
+
+        IndexWriterConfig config = new IndexWriterConfig(new StandardAnalyzer());
+        try (IndexWriter writer = new IndexWriter(directory, config); ) {
+            writer.addDocuments(documents);
+        } catch (IOException e) {
+            log.error("Could not index documents", e);
         }
     }
 
@@ -312,6 +268,52 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
             }
         }
         return maxLen;
+    }
+
+    /**
+     * Convert provided id, embedding and text to a Lucene document.
+     *
+     * @param id Document id, can be null
+     * @param embedding Embedding, can be null
+     * @param content Text content, can be null
+     *
+     * @return Lucene document
+     */
+    private Document toDocument(String id, Embedding embedding, TextSegment content) {
+        String text;
+        if (content == null) {
+            text = "";
+        } else {
+            text = content.text();
+        }
+        int tokens = encoding.countTokens(text);
+
+        Document document = new Document();
+        if (isBlank(id)) {
+            document.add(new TextField(ID_FIELD_NAME, randomUUID(), Store.YES));
+        } else {
+            document.add(new TextField(ID_FIELD_NAME, id, Store.YES));
+        }
+        if (!isBlank(text)) {
+            document.add(new TextField(CONTENT_FIELD_NAME, text, Store.YES));
+        }
+        if (embedding != null) {
+            float[] vector = embedding.vector();
+            if (vector != null) {
+                document.add(new KnnFloatVectorField(EMBEDDING_FIELD_NAME, vector));
+            }
+        }
+        document.add(new IntField(TOKEN_COUNT_FIELD_NAME, tokens, Store.YES));
+
+        if (content != null) {
+            Map<String, Object> metadataMap = content.metadata().toMap();
+            if (metadataMap != null) {
+                for (Entry<String, Object> entry : metadataMap.entrySet()) {
+                    document.add(toField(entry));
+                }
+            }
+        }
+        return document;
     }
 
     /**

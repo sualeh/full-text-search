@@ -74,6 +74,7 @@ public final class LuceneContentRetriever implements ContentRetriever {
          * Sets the name of the content field.
          *
          * @param contentFieldName Content field name
+         *
          * @return Builder
          */
         public LuceneContentRetrieverBuilder contentFieldName(String contentFieldName) {
@@ -90,6 +91,7 @@ public final class LuceneContentRetriever implements ContentRetriever {
          * Sets the Lucene directory. If null, a temporary file-based directory is used.
          *
          * @param directory Lucene directory
+         *
          * @return Builder
          */
         public LuceneContentRetrieverBuilder directory(Directory directory) {
@@ -112,6 +114,7 @@ public final class LuceneContentRetriever implements ContentRetriever {
          * Returns only a certain number of documents.
          *
          * @param maxResults Number of documents to return
+         *
          * @return Builder
          */
         public LuceneContentRetrieverBuilder maxResults(int maxResults) {
@@ -125,6 +128,7 @@ public final class LuceneContentRetriever implements ContentRetriever {
          * Returns documents until the maximum token limit is reached.
          *
          * @param maxTokens Maximum number of tokens
+         *
          * @return Builder
          */
         public LuceneContentRetrieverBuilder maxTokens(int maxTokens) {
@@ -138,6 +142,7 @@ public final class LuceneContentRetriever implements ContentRetriever {
          * Returns values above a certain score.
          *
          * @param minScore Threshold score
+         *
          * @return Builder
          */
         public LuceneContentRetrieverBuilder minScore(double minScore) {
@@ -161,6 +166,7 @@ public final class LuceneContentRetriever implements ContentRetriever {
          * Sets the name of the token count field.
          *
          * @param tokenCountFieldName Token count field name
+         *
          * @return Builder
          */
         public LuceneContentRetrieverBuilder tokenCountFieldName(String tokenCountFieldName) {
@@ -354,6 +360,7 @@ public final class LuceneContentRetriever implements ContentRetriever {
      * Create content metadata with hit score.
      *
      * @param scoreDoc Lucene score doc
+     *
      * @return Metadata map with score
      */
     private Map<ContentMetadata, Object> withScore(ScoreDoc scoreDoc) {

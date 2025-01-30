@@ -55,7 +55,7 @@ public class EmbeddingSearchResearch {
         System.out.println("\n>> Full text query");
 
         for (final TextEmbedding stringEmbedding : hits) {
-            indexer.add(stringEmbedding.id(), stringEmbedding.text());
+            indexer.add(stringEmbedding.id(), stringEmbedding.embedding(), stringEmbedding.text());
         }
         for (final TextEmbedding stringEmbedding : misses) {
             indexer.add(stringEmbedding.text());
