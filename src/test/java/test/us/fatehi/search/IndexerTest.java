@@ -76,7 +76,7 @@ public class IndexerTest {
 
         indexer = LuceneEmbeddingStore.builder().directory(directory).build();
 
-        indexer.add((Embedding) null, textSegment);
+        indexer.add(null, textSegment);
 
         List<Content> results = contentRetriever.retrieve(query);
 
@@ -90,7 +90,7 @@ public class IndexerTest {
 
         indexer = LuceneEmbeddingStore.builder().directory(directory).build();
 
-        indexer.add("id", (Embedding) null);
+        indexer.add("id", null);
 
         List<Content> results = contentRetriever.retrieve(query);
 

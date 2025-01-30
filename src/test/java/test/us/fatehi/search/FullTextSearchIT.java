@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import org.apache.lucene.store.Directory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import test.utility.TextEmbedding;
 import us.fatehi.search.DirectoryFactory;
@@ -43,6 +44,7 @@ public class FullTextSearchIT {
     private LuceneContentRetriever contentRetriever;
 
     @Test
+    @DisplayName("Test retriever returning just 1 max result")
     public void query1() {
 
         contentRetriever = LuceneContentRetriever.builder()
@@ -63,6 +65,7 @@ public class FullTextSearchIT {
     }
 
     @Test
+    @DisplayName("Test retriever returning all resuts, not just matchine ones")
     public void queryAll() {
 
         contentRetriever = LuceneContentRetriever.builder()
@@ -90,6 +93,7 @@ public class FullTextSearchIT {
     }
 
     @Test
+    @DisplayName("Test retriever using default settings (except directory)")
     public void queryContent() {
 
         contentRetriever = LuceneContentRetriever.builder().directory(directory).build();
@@ -113,6 +117,7 @@ public class FullTextSearchIT {
     }
 
     @Test
+    @DisplayName("Test retriever returning up to max tokens")
     public void queryWithMaxTokens() {
 
         contentRetriever = LuceneContentRetriever.builder()
@@ -133,6 +138,7 @@ public class FullTextSearchIT {
     }
 
     @Test
+    @DisplayName("Test retriever return only matching documents")
     public void queryWithMetadataFields() {
 
         Metadata metadata = metadataName("doc1");
@@ -164,6 +170,7 @@ public class FullTextSearchIT {
     }
 
     @Test
+    @DisplayName("Test retriever returning documents greater than a minimum score")
     public void queryWithMinScore() {
 
         contentRetriever = LuceneContentRetriever.builder()
@@ -185,10 +192,10 @@ public class FullTextSearchIT {
     }
 
     @Test
+    @DisplayName("Test retriever where a token counts are not found due to an incorrect field name")
     public void retrieverWithBadTokenCountField() {
 
         contentRetriever = LuceneContentRetriever.builder()
-                .maxTokens(8)
                 .tokenCountFieldName("BAD_TOKEN_COUNT_FIELD_NAME")
                 .directory(directory)
                 .build();
@@ -200,6 +207,7 @@ public class FullTextSearchIT {
     }
 
     @Test
+    @DisplayName("Test retriever using a null query")
     public void retrieverWithNullQuery() {
 
         contentRetriever = LuceneContentRetriever.builder().directory(directory).build();
@@ -210,6 +218,7 @@ public class FullTextSearchIT {
     }
 
     @Test
+    @DisplayName("Test retriever where documents are not found due to an incorrect field name")
     public void retrieverWithWrongContentField() {
 
         contentRetriever = LuceneContentRetriever.builder()
