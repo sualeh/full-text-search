@@ -1,4 +1,4 @@
-package us.fatehi.search;
+package dev.langchain4j.rag.content.retriever.lucene;
 
 import static dev.langchain4j.internal.ValidationUtils.ensureNotNull;
 

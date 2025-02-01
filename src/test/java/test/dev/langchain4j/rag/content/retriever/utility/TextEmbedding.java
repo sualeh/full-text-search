@@ -1,4 +1,4 @@
-package test.utility;
+package test.dev.langchain4j.rag.content.retriever.utility;
 
 import static java.util.Objects.requireNonNull;
 

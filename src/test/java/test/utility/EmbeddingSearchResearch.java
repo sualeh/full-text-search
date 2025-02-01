@@ -1,6 +1,5 @@
 package test.utility;
 
-import dev.langchain4j.store.embedding.CosineSimilarity;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -14,8 +13,11 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BooleanQuery.Builder;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.KnnFloatVectorQuery;
+import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TopFieldDocs;
@@ -26,8 +28,13 @@ import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import us.fatehi.search.DirectoryFactory;
-import us.fatehi.search.LuceneEmbeddingStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import dev.langchain4j.data.embedding.Embedding;
+import dev.langchain4j.rag.content.retriever.lucene.DirectoryFactory;
+import dev.langchain4j.rag.content.retriever.lucene.LuceneEmbeddingStore;
+import dev.langchain4j.store.embedding.CosineSimilarity;
+import test.dev.langchain4j.rag.content.retriever.utility.TextEmbedding;
 
 @TestMethodOrder(OrderAnnotation.class)
 public class EmbeddingSearchResearch {
@@ -46,7 +53,9 @@ public class EmbeddingSearchResearch {
         TextEmbedding.fromResource("query3.txt"),
     };
 
+    private static final Logger log = LoggerFactory.getLogger(EmbeddingSearchResearch.class);
     private Directory directory;
+
     private LuceneEmbeddingStore indexer;
 
     @Test
@@ -95,14 +104,14 @@ public class EmbeddingSearchResearch {
         System.out.println("\n>> Embedding vector query");
 
         for (final TextEmbedding stringEmbedding : hits) {
-            indexer.add(stringEmbedding.id(), stringEmbedding.embedding());
+            indexer.add(stringEmbedding.id(), stringEmbedding.embedding(), stringEmbedding.text());
         }
         for (final TextEmbedding stringEmbedding : misses) {
-            indexer.add(stringEmbedding.id(), stringEmbedding.embedding());
+            indexer.add(stringEmbedding.id(), stringEmbedding.embedding(), stringEmbedding.text());
         }
 
         for (final TextEmbedding query : queries) {
-            final org.apache.lucene.search.Query luceneQuery = buildQuery(query);
+            final org.apache.lucene.search.Query luceneQuery = buildEmbeddingQuery(query);
             retrieve(luceneQuery);
         }
     }
@@ -136,23 +145,40 @@ public class EmbeddingSearchResearch {
         directory.close();
     }
 
+    private Query buildQuery(String query, Embedding embedding) {
+      Builder builder = new BooleanQuery.Builder();
+
+      try {
+          QueryParser parser = new QueryParser("context", new StandardAnalyzer());
+          Query fullTextQuery = parser.parse(query);
+          builder.add(fullTextQuery, Occur.SHOULD);
+      } catch (NullPointerException | ParseException e) {
+          log.warn(String.format("Could not create query <%s>", query), e);
+      }
+
+      if (embedding != null && embedding.vector().length > 0) {
+          final Query vectorQuery = new KnnFloatVectorQuery("embedding", embedding.vector(), 10);
+          builder.add(vectorQuery, Occur.SHOULD);
+      }
+
+      boolean onlyMatches = true;
+      if (!onlyMatches) {
+          builder.add(new MatchAllDocsQuery(), Occur.SHOULD);
+      }
+
+      BooleanQuery combinedQuery = builder.build();
+      return combinedQuery;
+  }
+
     private org.apache.lucene.search.Query buildQuery(final TextEmbedding query) throws ParseException {
         System.out.printf("%n{\"query\"=\"%s\"}%n", query.text().text());
-        org.apache.lucene.search.Query fullTextQuery;
-        final QueryParser parser = new QueryParser("content", new StandardAnalyzer());
-        fullTextQuery = parser.parse(query.text().text());
-
-        final org.apache.lucene.search.Query vectorQuery =
-                // new FloatVectorSimilarityQuery("embedding", query.embedding().vector(), 0.5f);
-                new KnnFloatVectorQuery("embedding", query.embedding().vector(), 5);
-
-        final BooleanQuery combinedQuery = new BooleanQuery.Builder()
-                .add(vectorQuery, Occur.SHOULD)
-                .add(fullTextQuery, Occur.SHOULD)
-                .build();
-
-        return combinedQuery;
+        return buildQuery(query.text().text(), query.embedding());
     }
+
+    private org.apache.lucene.search.Query buildEmbeddingQuery(final TextEmbedding query) throws ParseException {
+      System.out.printf("%n{\"query\"=\"%s\"}%n", query.text().text());
+      return buildQuery(null, query.embedding());
+  }
 
     private List<String> retrieve(final org.apache.lucene.search.Query luceneQuery) throws Exception {
         try (final DirectoryReader reader = DirectoryReader.open(directory)) {

@@ -1,10 +1,11 @@
 package test.utility;
 
+import org.junit.platform.commons.util.StringUtils;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModelName;
-import org.junit.platform.commons.util.StringUtils;
+import test.dev.langchain4j.rag.content.retriever.utility.TextEmbedding;
 
 public class TextEmbedder {
 

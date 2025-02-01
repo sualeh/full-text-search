@@ -1,4 +1,4 @@
-package us.fatehi.search;
+package dev.langchain4j.rag.content.retriever.lucene;
 
 import static dev.langchain4j.internal.Utils.isNullOrEmpty;
 import static dev.langchain4j.internal.Utils.randomUUID;
@@ -10,6 +10,10 @@ import com.knuddels.jtokkit.api.EncodingRegistry;
 import com.knuddels.jtokkit.api.EncodingType;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.rag.content.Content;
+import dev.langchain4j.rag.content.ContentMetadata;
+import dev.langchain4j.rag.content.retriever.ContentRetriever;
+import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.EmbeddingStore;
@@ -73,10 +77,10 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
         }
     }
 
-    static final String ID_FIELD_NAME = "id";
-    static final String CONTENT_FIELD_NAME = "content";
-    static final String TOKEN_COUNT_FIELD_NAME = "estimated-token-count";
-    static final String EMBEDDING_FIELD_NAME = "embedding";
+    private static final String ID_FIELD_NAME = LuceneFields.ID_FIELD_NAME.fieldName();
+    private static final String CONTENT_FIELD_NAME = LuceneFields.CONTENT_FIELD_NAME.fieldName();
+    private static final String TOKEN_COUNT_FIELD_NAME = LuceneFields.TOKEN_COUNT_FIELD_NAME.fieldName();
+    private static final String EMBEDDING_FIELD_NAME = LuceneFields.EMBEDDING_FIELD_NAME.fieldName();
 
     private static final Logger log = LoggerFactory.getLogger(LuceneEmbeddingStore.class);
 
@@ -201,8 +205,48 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
     /** {@inheritDoc} */
     @Override
     public EmbeddingSearchResult<TextSegment> search(EmbeddingSearchRequest request) {
-        throw new UnsupportedOperationException(
-                "Not supported yet. Will be supported when hybrid full text and vector search is supported.");
+        if (request == null) {
+            return new EmbeddingSearchResult<>(Collections.emptyList());
+        }
+
+        ContentRetriever contentRetriever = LuceneContentRetriever.builder()
+                .directory(directory)
+                .embeddingModel(new KnownQueryEmbeddingModel(request.queryEmbedding()))
+                .maxResults(request.maxResults())
+                .minScore(request.minScore())
+                .directory(directory)
+                .build();
+        log.debug("Ignoring request filter", request.filter());
+
+        List<EmbeddingMatch<TextSegment>> results = new ArrayList<>();
+        List<Content> contents = contentRetriever.retrieve(null);
+        for (Content content : contents) {
+            try {
+                Map<ContentMetadata, Object> metadata = content.metadata();
+                Double score;
+                if (metadata != null && metadata.containsKey(ContentMetadata.SCORE)) {
+                    score = (Double) metadata.get(ContentMetadata.SCORE);
+                } else {
+                    score = Double.NaN;
+                }
+                // Note: Lucene does not store embeddings (KnnFloatVectorField)
+                Embedding embedding = null;
+                TextSegment textSegment = content.textSegment();
+                String id;
+                if (textSegment != null && textSegment.metadata() != null) {
+                    id = textSegment.metadata().getString(LuceneFields.ID_FIELD_NAME.fieldName());
+                } else {
+                    log.debug("Generating new random id");
+                    id = randomUUID();
+                }
+                EmbeddingMatch<TextSegment> result = new EmbeddingMatch<>(score, id, embedding, textSegment);
+                results.add(result);
+            } catch (Exception e) {
+                log.error("Could not convert content to results", e);
+            }
+        }
+
+        return new EmbeddingSearchResult<>(results);
     }
 
     /**
@@ -299,7 +343,7 @@ public final class LuceneEmbeddingStore implements EmbeddingStore<TextSegment> {
         }
         if (embedding != null) {
             float[] vector = embedding.vector();
-            if (vector != null) {
+            if (vector != null && vector.length > 0) {
                 document.add(new KnnFloatVectorField(EMBEDDING_FIELD_NAME, vector));
             }
         }

@@ -1,10 +1,13 @@
-package test.us.fatehi.search;
+package test.dev.langchain4j.rag.content.retriever;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.rag.content.Content;
+import dev.langchain4j.rag.content.retriever.lucene.DirectoryFactory;
+import dev.langchain4j.rag.content.retriever.lucene.LuceneContentRetriever;
+import dev.langchain4j.rag.content.retriever.lucene.LuceneEmbeddingStore;
 import dev.langchain4j.rag.query.Query;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,10 +18,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import test.utility.TextEmbedding;
-import us.fatehi.search.DirectoryFactory;
-import us.fatehi.search.LuceneContentRetriever;
-import us.fatehi.search.LuceneEmbeddingStore;
+import test.dev.langchain4j.rag.content.retriever.utility.TextEmbedding;
 
 public class FullTextSearchIT {
 
@@ -69,7 +69,7 @@ public class FullTextSearchIT {
     public void queryAll() {
 
         contentRetriever = LuceneContentRetriever.builder()
-                .matchUntilTopN()
+                .matchUntilMaxResults()
                 .directory(directory)
                 .build();
 

@@ -1,4 +1,4 @@
-package test.us.fatehi.search;
+package test.dev.langchain4j.rag.content.retriever;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -6,6 +6,9 @@ import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.rag.content.Content;
+import dev.langchain4j.rag.content.retriever.lucene.DirectoryFactory;
+import dev.langchain4j.rag.content.retriever.lucene.LuceneContentRetriever;
+import dev.langchain4j.rag.content.retriever.lucene.LuceneEmbeddingStore;
 import dev.langchain4j.rag.query.Query;
 import java.util.Collections;
 import java.util.List;
@@ -13,9 +16,6 @@ import org.apache.lucene.store.Directory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import us.fatehi.search.DirectoryFactory;
-import us.fatehi.search.LuceneContentRetriever;
-import us.fatehi.search.LuceneEmbeddingStore;
 
 public class IndexerTest {
 
