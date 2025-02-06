@@ -5,7 +5,7 @@
 
   <groupId>us.fatehi</groupId>
   <artifactId>full-text-search</artifactId>
-  <version>0.0.6</version>
+  <version>0.1.0</version>
   <packaging>jar</packaging>
   <name>Full-text Content Retriever</name>
   <description>LangChain4J full-text content retriever using Apache Lucene</description>
