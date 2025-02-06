@@ -32,8 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.rag.content.retriever.lucene.DirectoryFactory;
+import dev.langchain4j.rag.content.retriever.lucene.LuceneDocumentFields;
 import dev.langchain4j.rag.content.retriever.lucene.LuceneEmbeddingStore;
-import dev.langchain4j.rag.content.retriever.lucene.LuceneFields;
 import dev.langchain4j.store.embedding.CosineSimilarity;
 import test.dev.langchain4j.rag.content.retriever.utility.TextEmbedding;
 
@@ -153,7 +153,7 @@ public class EmbeddingSearchResearch {
     if (query != null && !query.isBlank()) {
       try {
         final QueryParser parser =
-            new QueryParser(LuceneFields.CONTENT_FIELD_NAME.fieldName(), new StandardAnalyzer());
+            new QueryParser(LuceneDocumentFields.CONTENT_FIELD_NAME.fieldName(), new StandardAnalyzer());
         final Query fullTextQuery = parser.parse(query);
         builder.add(fullTextQuery, Occur.SHOULD);
       } catch (final ParseException e) {
@@ -165,7 +165,7 @@ public class EmbeddingSearchResearch {
 
     if (embedding != null && embedding.vector().length > 0) {
       final Query vectorQuery = new KnnFloatVectorQuery(
-          LuceneFields.EMBEDDING_FIELD_NAME.fieldName(), embedding.vector(), 10);
+          LuceneDocumentFields.EMBEDDING_FIELD_NAME.fieldName(), embedding.vector(), 10);
       builder.add(vectorQuery, Occur.SHOULD);
     } else {
       log.debug("Query embedding vector not provided", query);
